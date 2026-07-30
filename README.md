@@ -1,0 +1,1 @@
+[![Practical Homework 1](https://github.com/varlamovai/devops2079-homework/actions/workflows/test-workflow.yml/badge.svg)](https://github.com/varlamovai/devops2079-homework/actions/workflows/test-workflow.yml)
