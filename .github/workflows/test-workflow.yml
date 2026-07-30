@@ -1,0 +1,64 @@
+name: Practical Homework 1
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+    inputs:
+      fail_job:
+        description: 'Уронить вторую джобу для проверки ошибки?'
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  # создание и загрузка артефакта + проверка секретов
+  build-and-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Create a dummy artifact file
+        run: |
+          mkdir -p build
+          echo "Build finished at $(date)" > build/output.txt
+          echo "App version: 1.0.0" >> build/output.txt
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-build-artifact
+          path: build/output.txt
+          retention-days: 1
+
+      # проверка работы с секретами
+      - name: Test secret in logs
+        env:
+          MY_SECRET: ${{ secrets.MY_CUSTOM_SECRET }}
+        run: |
+          echo "Вывожу секрет в лог:"
+          echo "Value: $MY_SECRET"
+          echo "Секрет в файле:"
+          echo "Secret data: $MY_SECRET" > build/secret.txt
+          # маскирование GitHub:
+          cat build/secret.txt
+
+  # Вторая джоба: проверка падения и зависимость от первой
+  test-and-fail:
+    needs: build-and-upload  # Выполняется после первой джобы
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check input state
+        run: echo "Fail flag is ${{ inputs.fail_job }}"
+
+      # Требование 4: Намеренная ошибка при симуляции падения
+      - name: Simulate Failure
+        if: ${{ inputs.fail_job == true }}
+        run: |
+          echo "Джоба упала по запросу пользователя!"
+          exit 1
+
+      - name: Success Step
+        if: ${{ inputs.fail_job != true }}
+        run: echo "Джоба прошла успешно!"
